@@ -1,5 +1,5 @@
 ;; Import modules
-!(import! &self metta:common:Num)
+; !(import! &self metta:common:Num)
 ;; !(import! &self metta:synthesis:Unify)
 
 ;; Enumerate all programs up to a given depth that are consistent with
@@ -31,7 +31,13 @@
 (: synthesize (-> $a (-> $kt) (-> $rt) Nat $a))
 ;; Nullary rule (axiom)
 (= (synthesize $query $kb $rb $depth)
-   (let $query ($kb) $query))
+   (let*
+     (
+               ($query ($kb))
+               (() (println! (Nullary $query)))
+     )
+     $query
+    ))
 ;; Unary rule
 (= (synthesize $query $kb $rb (S $k))
    (let* (((: $ructor (-> $premise $conclusion)) ($rb))
@@ -65,10 +71,24 @@
 ;; Quintenary rule
 (= (synthesize $query $kb $rb (S $k))
    (let* (((: $ructor (-> $premise1 $premise2 $premise3 $premise4 $premise5 $conclusion)) ($rb))
+          (() (println! (premises ($premise1 premise2 $premise2 $premise3 $premise4 $premise5) conclusions ($conclusion))))
           ((: ($ructor $proof1 $proof2 $proof3 $proof4 $proof5) $conclusion) $query)
-          ((: $proof1 $premise1) (synthesize (: $proof1 $premise1) $kb $rb $k))
+          ; (() (println! (Query distructed : ($ructor $proof1 $proof2 $proof3 $proof4 $proof5) $conclusion)))
+          ; (() (println! (In quintenary rule synthesizer)))
+          (() (println! (: $proof1 $premise1)))
+          ((: $proof1 $premise1) (synthesize (: $proof1 $premise1) $kb $rb $k))        ;  (≞ $q#1675 (STV $Qs#1993 $Qc#1994))
+          (() (println! (PP1 : $proof1 $premise1)))
+          (() (println! (: $proof2 $premise2)))
           ((: $proof2 $premise2) (synthesize (: $proof2 $premise2) $kb $rb $k))
-          ((: $proof3 $premise3) (synthesize (: $proof3 $premise3) $kb $rb $k))
+          (() (println! (PP2 : $proof2 $premise2)))
+          (() (println! (: $proof3 $premise3)))
+          ((: $proof3 $premise3) (synthesize (: $proof3 $premise3) $kb $rb $k))    
+          (() (println! (PP3 : $proof3 $premise3)))
+          (() (println! (: $proof4 $premise4)))
           ((: $proof4 $premise4) (synthesize (: $proof4 $premise4) $kb $rb $k))
-          ((: $proof5 $premise5) (synthesize (: $proof5 $premise5) $kb $rb $k)))
+          (() (println! (PP4 : $proof4 $premise4)))
+          (() (println! (: $proof5 $premise5)))
+          ((: $proof5 $premise5) (synthesize (: $proof5 $premise5) $kb $rb $k))
+          (() (println! (PP5 : $proof5 $premise5)))
+          )
      $query))

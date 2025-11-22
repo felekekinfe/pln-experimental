@@ -14,16 +14,21 @@
 ;; TV represents the resulting truth value of the conclusion.
 
 ;; Import modules
-!(import! &self metta:common:truthvalue:MeasEq)
-!(import! &self metta:common:formula:DeductionFormula)
+; !(register-module! ../../../metta)
+; !(import! &self metta:common:truthvalue:MeasEq)
+; !(import! &self metta:common:formula:DeductionFormula)
+; !(import! &self metta:common:truthvalue:TruthValue)
+; !(import! &self metta:common:Num)
 
 ;; Define deduction rule
 (: deduction-rule (-> Atom))
 (= (deduction-rule)
    (: Deduction
-      (-> (≞ $p $ptv)
-          (≞ $q $qtv)
+      (-> (≞ $q $qtv)
+          (≞ $p $ptv)
           (≞ $r $rtv)
-          (≞ (→ $p $q) $pqtv)
-          (≞ (→ $q $r) $qrtv)
-          (≞ (→ $p $r) (deduction-formula $ptv $qtv $rtv $pqtv $qrtv)))))
+          (≞ (→ $q $p ()) $qptv)
+          (≞ (→ $p $r ()) $prtv)
+          (≞ (→ $q $r ($p)) (deduction-formula $qtv $ptv $rtv $qptv $prtv)))))
+
+; !(deduction-rule)

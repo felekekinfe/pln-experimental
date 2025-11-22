@@ -19,7 +19,7 @@
 (: fromNat (-> Nat Number))
 (= (fromNat Z) 0)
 (= (fromNat (S $k)) (+ 1 (fromNat $k)))
-
+; !(fromNumber 5)
 ;;;;;;;;;;;;;;;;;
 ;; Bare Entail ;;
 ;;;;;;;;;;;;;;;;;
