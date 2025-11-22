@@ -1,0 +1,30 @@
+(: Truth_w2c (-> Number Number))
+(= (Truth_w2c $w)
+   (/safe $w (+ $w 1)))
+
+;Exclude division by 0
+(= (/safe $A $B)
+   (if (> $B 0.0)
+       (/ $A $B)
+       (empty)))
+
+(= (lcg-formula (STV $sc1 $cc1)
+                    (STV $sc2 $cc2)
+                    (STV $slcg $clcg)
+                    (STV $sc1lcg $cc1lcg)
+                    (STV $sc2lcg $cc2lcg))
+   (STV (+ (/safe (* (* $sc1lcg $sc2lcg) $slcg)
+                  $sc2)
+           (/safe (* $slcg (* (- 1 $sc1lcg) (- 1 $sc2lcg)))
+                  (- 1 $sc2)))
+        (Truth_w2c (min $cc1lcg $cc2lcg))))
+
+(: lcg-rule (-> Atom))
+(= (lcg-rule)
+   (: LCG ;; Least Common Generalization
+      (-> (≞ $c1 $c1tv)
+          (≞ $c2 $c2tv)
+          (≞ $lcg $lcgtv)
+          (≞ (→ $c1 $lcg ()) $c1lcgtv)
+          (≞ (→ $c2 $lcg ()) $c2lcgtv) 
+          (≞ (→ $c1 $c2 ($lcg)) (lcg-formula $c1tv $c2tv $lcgtv $c1lcgtv $c2lcgtv)))))
