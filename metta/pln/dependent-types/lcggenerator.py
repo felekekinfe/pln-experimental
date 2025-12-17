@@ -90,4 +90,4 @@ def generate_lcg_rules(max_depth):
     # ---------- wrap everything ----------
     return "(\n" + "\n\n".join(rules) + "\n)"
 
-print(generate_lcg_rules(2))
+# print(generate_lcg_rules(2))

@@ -8,7 +8,10 @@
 ; !(import! &self ../../../metta/common/Num)
 !(import! &self ../../../metta/synthesis/Synthesize)
 !(import! &self ../../../metta/common/Record)
+!(import! &self "dependent-types/lcggenerator.py")
+; !(let $lcgs (py-call (lcggenerator.generate_lcg_rules 2)) (let $slcgs (sread $lcgs) (superpose $slcgs)))
 ; !(import! &self metta:pln:dependent-types:helper)
+
 
 (: Predicate Type)
 (: → (-> Predicate %Undefined% Expression Type))
@@ -31,14 +34,16 @@
         (: waterm (≞ water (STV 0.9 0.86)))
         (: landm (≞ land (STV 0.88 0.84)))
         (: surfacem (≞ surface (STV 0.9 0.86)))
+        (: surfacedm (≞ surfaced (STV 0.9 0.86)))
         (: landsurfacem (≞ (→ land surface ()) (STV 0.88 0.84)))
         (: mediumm (≞ medium (STV 0.9 0.86)))
-        (: watermediumm (≞ (→ water medium ()) (STV 0.9 0.86)))
+        (: watersurfacedm (≞ (→ water surfaced ()) (STV 0.9 0.86)))
+        (: surfacedmediumm (≞ (→ surfaced medium ()) (STV 0.9 0.86)))
         (: surfacemediumm (≞ (→ surface medium ()) (STV 0.9 0.86)))
 )))
 
 (: rb (-> Atom))
-(= (rb) (double-depth-lcg-rule))
-
-
+; (= (rb) (double-depth-lcg-rule))
+(= (rb) (let $lcgs (py-call (lcggenerator.generate_lcg_rules 2)) (let $slcgs (sread $lcgs) (superpose $slcgs))))
+; !(rb)
 !(synthesize (: $proof (≞ (→ water land ($lcg)) $tv)) kb rb (S Z))
