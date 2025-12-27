@@ -41,7 +41,7 @@
 
 
 (= (list-average $list)
-    (let $sum (foldl-atom $list 0 $acc $x (vector-op (cdr-atom $x) $acc +)) (let $avg-list (map-atom $sum $x (/ (to-decimal $x) 2)) (cons-atom STV $avg-list)))
+    (let ($sum $length) (collapse(superpose((foldl-atom $list 0 $acc $x (vector-op (cdr-atom $x) $acc +)) (size-atom $list)))) (let $avg-list (map-atom $sum $x (/ (to-decimal $x) $length)) (cons-atom STV $avg-list)))
 )
 
 ; (= (list-average $list)

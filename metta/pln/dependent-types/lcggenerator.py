@@ -90,4 +90,93 @@ def generate_lcg_rules(max_depth):
     # ---------- wrap everything ----------
     return "(\n" + "\n\n".join(rules) + "\n)"
 
-# print(generate_lcg_rules(2))
+def generate_nullary_synthesizer():
+    return """
+        (= (synthesize $query $kb $rb $depth)
+        (let*
+            (
+            ($query ($kb))
+            )
+            $query
+        )
+        )
+        """
+
+def generate_synthesizer(n):
+    """
+    Generates an n-ary synthesize rule.
+    """
+    premises = " ".join([f"$premise{i}" for i in range(1, n + 1)])
+    proofs = " ".join([f"$proof{i}" for i in range(1, n + 1)])
+
+    recursive_calls = "\n          ".join(
+        [
+            f"((: $proof{i} $premise{i}) "
+            f"(synthesize (: $proof{i} $premise{i}) $kb $rb $k))"
+            for i in range(1, n + 1)
+        ]
+    )
+
+    return f"""
+        (= (synthesize $query $kb $rb (S $k))
+        (let* (
+                ((: $ructor (-> {premises} $conclusion)) ($rb))
+                ((: ($ructor {proofs}) $conclusion) $query)
+                {recursive_calls}
+                )
+            (let (: $finalproof ($measq $finalconc $finalstv))
+                $query
+                (: $finalproof
+                    ($measq $finalconc
+                            (let $res (cdr-atom $finalstv)
+                                (eval $res)))))
+        )
+        )
+        """
+
+def generate_all_synthesizers(max_depth):
+    synthesizers = []
+
+    # 1. Nullary synthesizer
+    synthesizers.append(generate_nullary_synthesizer())
+
+    # 2. Compute maximum required arity
+    max_premises = 2 * max_depth + 5
+
+    # 3. Unary → max-arity synthesizers
+    for n in range(1, max_premises + 1):
+        synthesizers.append(generate_synthesizer(n))
+
+    # 4. Wrap everything
+    return "\n".join(synthesizers) + "\n"
+
+def generate_lcg_with_synthesizers(max_depth):
+    parts = []
+
+    # LCG rules (already wrapped internally)
+    parts.append(generate_lcg_rules(max_depth))
+
+    # Synthesizers (wrapped here)
+    parts.append(generate_all_synthesizers(max_depth))
+
+    return "\n\n".join(parts)
+
+def generate_lcg_and_write_synthesizers(max_depth, synthesizer_path):
+    """
+    - Writes synthesizers to `synthesizer_path`
+    - Returns LCG rules as a string
+    """
+
+    # 1. Generate LCG rules (returned)
+    lcg_rules = generate_lcg_rules(max_depth)
+
+    # 2. Generate synthesizers (written to file)
+    synthesizers = generate_all_synthesizers(max_depth)
+    with open(synthesizer_path, "w") as f:
+        f.write(synthesizers)
+
+    return lcg_rules
+
+
+
+# print(generate_lcg_and_write_synthesizers(2, "synthesizers.metta"))
