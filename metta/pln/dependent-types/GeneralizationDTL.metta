@@ -21,7 +21,7 @@
                 (≞ (→ $c2 $lcg ()) $c2lcgtv)
                 (≞ (→ $c1 $c2 ($lcg)) (Method lcg-formula $c1tv $c2tv $lcgtv (STV ($c1vartv $varlcgtv) ()) $c2lcgtv)))
         )
-        (: FDSCLR 
+        (: FDSCLR
             (-> (≞ $c1 $c1tv)
                 (≞ $c2 $c2tv)
                 (≞ $lcg $lcgtv)
@@ -60,4 +60,8 @@
         )
         )
     )
+)
+
+(= (concept-hierarchy)
+    (: $proof (≞ ))
 )
