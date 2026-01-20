@@ -2,6 +2,7 @@
 ;; Import modules
 !(import! &self ../../../metta/pln/dependent-types/GeneralizationDTLhelper)
 !(import! &self ../../../metta/pln/dependent-types/GeneralizationDTL)
+!(import! &kb ../../../metta/pln/dependent-types/GeneralizationKB)
 !(import! &self ../../../metta/common/truthvalue/MeasEq)
 ; !(import! &self metta:common:formula:DeductionFormula)
 !(import! &self ../../../metta/common/truthvalue/TruthValue)
@@ -10,7 +11,7 @@
 !(import! &self synthesizers)
 !(import! &self ../../../metta/common/Record)
 !(import! &self ../../../metta/pln/dependent-types/llm)
-!(import! &self "dependent-types/lcggenerator.py")
+!(import! &self "lcggenerator.py")
 ; !(let $lcgs (py-call (lcggenerator.generate_lcg_rules 2)) (let $slcgs (sread $lcgs) (superpose $slcgs)))
 ; !(import! &self metta:pln:dependent-types:helper)
 
@@ -22,39 +23,67 @@
 (: medium Predicate)
 (: surface Predicate)
 
-; (= (lcg-rule)
-;    (: LCG ;; Least Common Generalization
-;       (-> (≞ $c1 $c1tv)
-;           (≞ $c2 $c2tv)
-;           (≞ $lcg $lcgtv)
-;           (≞ (→ $c1 $lcg ()) $c1lcgtv)
-;           (≞ (→ $c2 $lcg ()) $c2lcgtv) 
-;           (≞ (→ $c1 $c2 ($lcg)) (lcg-formula $c1tv $c2tv $lcgtv $c1lcgtv $c2lcgtv)))))
-
 (: kb (-> Atom))
-(= (kb) (superpose(
-        (: waterm (≞ water (STV 0.9 0.86)))
-        (: landm (≞ land (STV 0.88 0.84)))
-        (: surfacem (≞ surface (STV 0.9 0.86)))
-        (: surfacedm (≞ surfaced (STV 0.9 0.86)))
-        (: surfacefm (≞ surfacef (STV 0.9 0.86)))
-        (: surfacezm (≞ surfacez (STV 0.9 0.86)))
-        (: landsurfacem (≞ (→ land surface ()) (STV 0.88 0.84)))
-        (: mediumm (≞ medium (STV 0.9 0.86)))
-        (: watersurfacedm (≞ (→ water surfaced ()) (STV 0.9 0.86)))
-        (: surfacedsurfacefm (≞ (→ surfaced surfacef ()) (STV 0.9 0.86)))
-        (: surfacefsurfacezm (≞ (→ surfacef surfacez ()) (STV 0.9 0.86)))
-        (: surfacemediumm (≞ (→ surface medium ()) (STV 0.9 0.86)))
-        (: mediumsurfacezm (≞ (→ medium surface ()) (STV 0.9 0.86)))
-)))
-
+(= (kb) (get-atoms &kb))
 (: rb (-> Atom))
 ; (= (rb) (double-depth-lcg-rule))
 (= (rb) (let $lcgs (py-call (lcggenerator.generate_lcg_and_write_synthesizers 2 "synthesizers.metta")) (let $slcgs (sread $lcgs) (superpose $slcgs))))
-; !(rb)
-!(let $res (collapse (synthesize (: $proof (≞ (→ water land ($lcg)) $tv)) kb rb (S Z)))
-        (if (== $res ())
-                (useGenAI lcgprompt water land)
-                $res
+
+(= (generalization-path-finder-helper $concept $kb $result)
+    (let (: $proof (≞ (→ $concept $gen ()) (STV $s $c))) ($kb) (let $updated-result (union-atom $result (-> $gen)) ($gen $updated-result)))
+)
+
+(= (generalization-path-finder $concept $kb $max-depth $counter $result)
+        (if (== $counter $max-depth)
+            $result
+            (let* 
+                (
+                    ($imt (collapse(generalization-path-finder-helper $concept $kb $result)))
+                    (($new-concept $new-result) (if (== (size-atom $imt) 1) (car-atom $imt) (() $result)))
+                    ($new-counter (+ $counter 1))
+                    ($gen-path (generalization-path-finder $new-concept $kb $max-depth $new-counter $new-result))
+                )
+                $gen-path
+            )
         )
 )
+
+(= (proof-generator $concept)
+    (py-call (operator.add $concept m))
+)
+
+(= (proof-generator $concept1 $concept2)
+    (let $c1c2 (py-call (operator.add $concept1 $concept2)) (proof-generator $c1c2))
+)
+
+(= (new-lcg-adder $space ($concept1l $lcg $concept1r) ($concept2l $lcg $concept2r) ($c1llcgstv $lcgc1rstv) ($c2llcgstv $lcgc2rstv))
+    (let*
+        (
+            (($c1llcgp $lcgc1rp $c2llcgp $lcgc2rp $lcgp) (collapse(superpose((proof-generator $concept1l $lcg) (proof-generator $lcg $concept1r) (proof-generator $concept2l $lcg) (proof-generator $lcg $concept2r) (proof-generator $lcg)))))
+            ($addpath (collapse(superpose((add-atom $space (: $c1llcgp (≞ (→ $concept1l $lcg ()) $c1llcgstv))) (add-atom $space (: $lcgc1rp (≞ (→ $lcg $concept1r ()) $lcgc1rstv))) (add-atom $space (: $c2llcgp (≞ (→ $concept2l $lcg ()) $c2llcgstv))) (add-atom $space (: $lcgc2rp (≞ (→ $lcg $concept2r ()) $lcgc2rstv)))))))
+            ($_ (println! (Add-path $addpath)))
+            ($removeoldpath (collapse(superpose((remove-atom $space (: $c1lc1rproof (≞ (→ $concept1l $concept1r ()) $c1lc1rstv))) (remove-atom $space (: $c2lc2rproof (≞ (→ $concept2l $concept2r ()) $c2lc2rstv)))))))
+            ($_ (println! (Remove-old-path $removeoldpath)))
+            ($addlcgcondly (collapse(let $prevlcg (collapse(match $space (: $lcgp (≞ $lcg $stv)) True)) (if (== $prevlcg (True)) $lcg (add-atom $space (: $lcgp (≞ $lcg (STV 0.5 0.5))))))))
+            ($_ (println! (Add-lcg-condly $addlcgcondly)))
+        )
+        (if (and (== (get-metatype $addpath) Expression) (and (== (get-metatype $addlcgcondly) Expression) (== (get-metatype $removeoldpath) Expression))) (New Lcg has been added successfuly) (There was an error while adding Lcg, please try again!))
+    )
+)
+
+(= (pair-lcg $concept1 $concept2 $kb $space $max-depth)
+    (let $res (collapse (synthesize (: $proof (≞ (→ $concept1 $concept2 ($lcg)) $tv)) kb rb (S Z)))
+            (if (== $res ())
+                    (let ($c1-gen-path $c2-gen-path) (collapse(superpose((generalization-path-finder $concept1 kb $max-depth 0 ($concept1)) (generalization-path-finder $concept2 kb $max-depth 0 ($concept2))))) 
+                        (let ($c1lcgpath $c2lcgpath $c1stvs $c2stvs) (sread (useGenAI lcgprompt ($concept1 $c1-gen-path) ($concept2 $c2-gen-path))) (new-lcg-adder $space $c1lcgres $c2lcgres $c1stvs $c2stvs))
+                    )
+                    $res
+            )
+    )
+)
+
+!(get-atoms &kb)
+
+!(pair-lcg sea land kb &kb 10)
+
+!(get-atoms &kb)
