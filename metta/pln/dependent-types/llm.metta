@@ -1,4 +1,5 @@
-!(import! &self ../../../metta/pln/dependent-types/lcgprompt)
+!(import! &self ../../../metta/pln/dependent-types/fullpathlcgprompt)
+!(import! &self ../../../metta/pln/dependent-types/partialpathlcgprompt)
 
 ;Create string by appending the list entries
 (= (py-str-helper () $outp) $outp)
@@ -49,4 +50,4 @@
           ($text (py-call (getattr $resp "text"))))
          $text))
 
-; !(lcgprompt (sea (sea -> surface-water -> watershed -> hydrologic-system -> planetary-composition)) (land (land -> land-surface -> landform -> terrain -> geosphere)))
+; !(useGenAI lcgprompt (sea (sea -> surface-water -> watershed -> hydrologic-system -> planetary-composition)) (land (land -> land-surface -> landform -> terrain -> geosphere)))
