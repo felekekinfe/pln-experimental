@@ -1,9 +1,6 @@
 
 !(import! &self GeneralizationDTLTest)
 !(import! &self synthesizers)
-;
-
-
 
 (: build-algebraic-spec (-> $space $concept (-> Atom) (-> Atom) Nat Atom))
 (= (build-algebraic-spec $space $concept $kb $rb $max-depth)
@@ -30,7 +27,7 @@
                 ;; sorts → nodes from the expanded related set
                 ($sorts $expanded)
              )
-         ;; return a concrete AlgebraicSpec atom: (: AlgebraicSpec (sorts ops axioms preds))
+         ;; return  AlgebraicSpec atom: (: AlgebraicSpec (sorts ops axioms preds))
          (cons-atom AlgebraicSpec (collapse(superpose(($sorts) ($ops) ($axiom) ($preds)))))
     )
 )
@@ -46,33 +43,29 @@
            (collapse (superpose ($acc) ($gp)))))))
 )
 
-(: extract-inheritance (-> $space Atom))
-(= (extract-inheritance $space)
-   ;; Return all inheritance/IsA atoms from $space
-   (let $res (collapse (match $space (: $p (≞ (→ $a $b ()) $stv))))
-     $res)
-)
+
 
 (: extract-operators (-> Atom))
 (= (extract-operators $space)
-   ;; Find atoms that look like operator/function declarations `(: name (-> ))`
-   (collapse (match $space (: $name (-> $rest)) True))
+(let $ops (: $conceptm (≞ $concept $STV)) (match $space $ops (collapse $ops)))
+   ;; Find atoms that look like operator `(: name (-> ))`
+   
 )
 
 
 (: extract-predicates (-> Atom))
 (= (extract-predicates $space)
    ;; Find simple predicate declarations like `(: name Predicate)`
-   (collapse (match $space (: $name Predicate) True)))
+   (let $pred (: $concept Predicate) (match $space $pred (collapse $pred)))
+  )
 
 ;axiom
 (: extract-axioms (-> Atom))
 (= (extract-axioms $space)
-   ;; Find measured or equality-like axioms: (≞ ) atoms and other constraints
-   (collapse (superpose
-     ((match $space (: $p (≞ $x $stv)) True))
-     
-   ))
+   ;; Find  axioms: (≞ ) atoms and other constraints
+
+   (let $axiom (: $conceptm (≞ $concept $stv)) (match &self $axiom (collapse(superpose (≞ $concept $stv)))))
+   
 )
 
 (: spec-from-paths (-> Atom Atom))
@@ -98,9 +91,9 @@
 (: synthesize-preds-if-missing (-> Atom (-> Atom) (-> Atom) Nat Atom))
 (= (synthesize-preds-if-missing $space $kb $rb $max-depth)
    ;; Synthesize predicate declarations when missing 
-   (let $goal (: $proposal Predicate)
+   (let $goal (: $proposal Predicate);
      (collapse (synthesize $goal $kb $rb (S Z)))))
 
 
 
-;!(build-algebraic-spec &kb water kb rb 2)
+;!(build-algebraic-spec &kb bird kb rb 2)
